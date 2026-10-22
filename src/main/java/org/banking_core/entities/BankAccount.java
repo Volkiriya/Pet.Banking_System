@@ -1,13 +1,11 @@
 package org.banking_core.entities;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NonNull;
 import jakarta.validation.constraints.PositiveOrZero;
 
 import java.math.BigDecimal;
 import java.util.Random;
-import java.util.UUID;
 
 @Getter
 public class BankAccount {
@@ -22,58 +20,54 @@ public class BankAccount {
     private static final String PREFIX = "ACC";
     private static final String CHARS = "QWERTYUIOPASDFGHJKLZXCVBNM123456789";
     private static final int SIZE_STRING = 10;
+    private static Random random = new Random();
 
-    private static String getAccountNumber() {
+    private static String generateAccountNumber() {
         StringBuilder sb = new StringBuilder(SIZE_STRING);
         for (int i = 0; i < SIZE_STRING; i++) {
-            sb.append(CHARS.charAt((int) (new Random().nextInt(CHARS.length()))));
+            sb.append(CHARS.charAt((int) (random.nextInt(CHARS.length()))));
         }
-        return sb.append(PREFIX).toString();
+        return PREFIX + sb;
     }
 
-    public BankAccount(@NonNull String ownerName) {
-        balance = BigDecimal.ZERO;
-        this.ownerName = ownerName;
-        this.accountNumber = getAccountNumber();
-    }
-
-    public BankAccount(@NonNull String ownerName, @NonNull BigDecimal balance) {
-        if (balance.compareTo(BigDecimal.ZERO) <= 0) {
+    public BankAccount(@NonNull BigDecimal balance, @NonNull String ownerName) {
+        if (balance.compareTo(BigDecimal.ZERO) >= 0) {
             this.balance = balance;
+        } else {
+            this.balance = BigDecimal.ZERO;
         }
         this.ownerName = ownerName;
         this.accountNumber = getAccountNumber();
     }
 
     public void setBalance(@NonNull BigDecimal balance) {
-        if (balance.compareTo(BigDecimal.ZERO) <= 0) {
-            this.balance = balance;
-        }
+        this.balance = balance;
     }
 
     public void setOwnerName(@NonNull String ownerName) throws IllegalArgumentException {
-        if (ownerName.compareTo("") <= 0 || ownerName == null) {
-            new IllegalAccessException("Owner can`t be without Name");
+        if (ownerName.isBlank()) {
+            throw new IllegalArgumentException("Owner can`t be without Name");
         } else {
             this.ownerName = ownerName;
         }
     }
 
-    public void replenishDeposit(BigDecimal amount) throws IllegalArgumentException {
-        if (amount.compareTo(BigDecimal.ZERO) <= 0 || amount == null) {
+    public void replenishDeposit(@NonNull BigDecimal amount) throws IllegalArgumentException {
+        if (amount.compareTo(BigDecimal.ZERO) > 0) {
             setBalance(getBalance().add(amount));
         } else {
-            new IllegalAccessException("Owner can`t be without Name");
+            throw new IllegalArgumentException("Owner can`t be without Name");
         }
     }
 
-    public BigDecimal withdrawDeposit(BigDecimal amount) {
-        if (amount.compareTo(BigDecimal.ZERO) > 0) {
-            if (getBalance() >= BigDecimal.valueOf(amount)) {
-                getBalance().subtract(amount);
+    public void withdrawDeposit(@NonNull BigDecimal amount) throws IllegalArgumentException {
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Withdrawal amount must be greater than zero");
+        } else {
+            if (amount.compareTo(getBalance()) <= 0) {
+                setBalance(getBalance().subtract(amount));
             } else {
-                System.err.println("Amount is beggest than balance");
-                return balance;
+                throw new IllegalArgumentException("Insufficient funds");
             }
         }
     }
